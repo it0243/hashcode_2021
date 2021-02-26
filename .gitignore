@@ -1,6 +1,3 @@
-/a_example.out
-/b_little_bit_of_everything.out
-/c_many_ingredients.out
-/d_many_pizzas.out
-/e_many_teams.out
+*.out
 /test.php
+/lights.php
