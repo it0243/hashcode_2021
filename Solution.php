@@ -64,9 +64,9 @@ foreach ($FILES as $file) {
     return $a['time'] > $b['time'];
   });
 
-  $best_cars = array_slice($cars, 0, $V/3);
-  $best_streets = array_merge(...array_column($best_cars, 'streets'));
-  $best_streets_counts = array_count_values($best_streets);
+  // $best_cars = array_slice($cars, 0, $V/3);
+  // $best_streets = array_merge(...array_column($best_cars, 'streets'));
+  // $best_streets_counts = array_count_values($best_streets);
   $all_streets = array_merge(...array_column($cars, 'streets'));
   $streets_counts = array_count_values($all_streets);
 
@@ -80,19 +80,20 @@ foreach ($FILES as $file) {
       }
     }
     if (count($incoming_streets)) {
-      usort($incoming_streets, function ($a, $b) use ($streets_counts) {
-        $best_weight_a = $best_streets_counts[$a] ?? 0;
-        $weight_a = ceil($streets_counts[$a] / 3) + $best_weight_a;
-        $best_weight_b = $best_streets_counts[$b] ?? 0;
-        $weight_b = ceil($streets_counts[$b] / 3) + $best_weight_b;
-        return $weight_a < $weight_b;
-      });
+      // usort($incoming_streets, function ($a, $b) use ($streets_counts, $best_streets_counts) {
+      //   $best_weight_a = $best_streets_counts[$a] ?? 0;
+      //   $weight_a = ceil($streets_counts[$a] / 3) + $best_weight_a;
+      //   $best_weight_b = $best_streets_counts[$b] ?? 0;
+      //   $weight_b = ceil($streets_counts[$b] / 3) + $best_weight_b;
+      //   return $weight_a < $weight_b;
+      // });
       $plan[$key] = [];
       $output .= $key . PHP_EOL;
       $output .= count($incoming_streets) . PHP_EOL;
       foreach ($incoming_streets as $name) {
         // $best_weight = $best_streets_counts[$name] ?? 0;
-        // $weight = ceil($streets_counts[$name] / 3) + $best_weight;
+        // $weight = ceil($streets_counts[$name] / 4) + ceil($best_weight / 2);
+        // $weight = max(1, $weight);
         $weight = 1;
         $output .= "$name $weight" . PHP_EOL;
         $plan[$key][$name] = $weight;
@@ -106,6 +107,7 @@ foreach ($FILES as $file) {
 
   $lights = get_lights($D, $plan);
   $traffic = [];
+  $queues = [];
   $cars_ended = 0;
 
   $second = 0;
@@ -118,10 +120,10 @@ foreach ($FILES as $file) {
     $car_str = $car['streets'][$car_str_index];
     $street = $streets[$car_str];
     $car_pos = $street['time'];
-    $car_go = (in_array($car_str, $current_lights) && empty($traffic[$second][$car_str]));
+    $car_go = (in_array($car_str, $current_lights) && empty($queues[$car_str]));
     $car_ended = false;
     // d("$car_key: $car_str pos:$car_pos go:$car_go ended:$car_ended");
-    $traffic[$second][$car_str][] = $car_key;
+    $queues[$car_str][$car_key] = $car_key;
     $traffic[$second][$car_key] = ['car_str' => $car_str, 'car_str_index' => $car_str_index, 'car_pos' => $car_pos, 'car_go' => $car_go];
   }
 
@@ -142,6 +144,7 @@ foreach ($FILES as $file) {
       if ($previous['car_go'] && $end_of_prev_str) {
         $car_str_index++;
         $car_pos = 1;
+        unset($queues[$prev_car_str][$car_key]);
       } elseif ($previous['car_go'] && !$end_of_prev_str) {
         $car_pos = $prev_car_pos + 1;
       } else {
@@ -149,7 +152,7 @@ foreach ($FILES as $file) {
       }
       $car_str = $car['streets'][$car_str_index];
       $street = $streets[$car_str];
-      $car_go = ($car_pos < $street['time']) || (in_array($car_str, $current_lights) && empty($traffic[$second][$car_str]));
+      $car_go = ($car_pos < $street['time']) || (in_array($car_str, $current_lights) && (empty($queues[$car_str]) || array_key_first($queues[$car_str]) == $car_key));
       $car_ended = ($car_str == $car['streets'][$car['streets_count'] - 1]) && $car_pos == $street['time'];
       // d("$car_key: $car_str pos:$car_pos go:$car_go ended:$car_ended");
       if ($car_ended) {
@@ -157,11 +160,12 @@ foreach ($FILES as $file) {
         $cars[$car_key]['score'] = $car_score;
         $file_score += $car_score;
         unset($active_cars[$car_key]);
+        unset($queues[$car_str][$car_key]);
         $cars_ended++;
       } else {
         $traffic[$second][$car_key] = ['car_str' => $car_str, 'car_str_index' => $car_str_index, 'car_pos' => $car_pos, 'car_go' => $car_go];
         if ($car_pos == $street['time']) {
-          $traffic[$second][$car_str][] = $car_key;
+          $queues[$car_str][$car_key] = $car_key;
         }
       }
     }
