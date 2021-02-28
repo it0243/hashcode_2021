@@ -9,27 +9,47 @@ class Reader {
   }
 
   public function read() {
-    // Open file
     $f = fopen($this->filename, "r");
-    // Read first line (parameters)
-    list($M, $T2, $T3, $T4) = explode(' ', trim(fgets($f)));
 
-    // Read all available pizzas
-    $pizzas = [];
-    for ($i = 0; $i < $M; $i++) {
-      // Get ingredients as an array
-      $pizza_description = explode(' ', trim(fgets($f)));
-      // Remove the first element which is the number of ingredients
-      $ingredient_count = array_shift($pizza_description);
-      $pizzas[$i] = [
-        'id' => $i,
-        'ingredients' => $pizza_description,
-        'count' => $ingredient_count
+    // Read 1st line parameters
+    list($D, $I, $S, $V, $F) = explode(' ', trim(fgets($f)));
+
+    // Read streets
+    $streets = [];
+    $intersections = [];
+    for ($i = 0; $i < $S; $i++) {
+      list($start, $end, $street_name, $time) = explode(' ', trim(fgets($f)));
+      $streets[$street_name] = [
+        'start' => $start,
+        'end'   => $end,
+        'name'  => $street_name,
+        'time'  => $time,
       ];
+      $intersections[$end][] = $street_name;
     }
+
+    // Read cars
+    $cars = [];
+    for ($i = 0; $i < $V; $i++) {
+      $car_desc = explode(' ', trim(fgets($f)));
+      $streets_count = array_shift($car_desc);
+      $car_streets = $car_desc;
+      $time = 0;
+      foreach ($car_streets as $ind => $car_street) {
+        $time += $ind > 0 ? $streets[$car_street]['time'] : 0;
+      }
+      if ($time <= $D) {
+        $cars[] = [
+          'streets_count'  => $streets_count,
+          'streets' => $car_streets,
+          'time'  => $time,
+        ];
+      }
+    }
+
     fclose($f);
 
-    $data = ['M' => $M, 'T2' => $T2, 'T3' => $T3, 'T4' => $T4, 'pizzas' => $pizzas];
+    $data = ['D' => $D, 'I' => $I, 'S' => $S, 'V' => $V, 'F' => $F, 'intersections' => $intersections, 'streets' => $streets, 'cars' => $cars];
     return $data;
   }
 }

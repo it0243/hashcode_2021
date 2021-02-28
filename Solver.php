@@ -2,67 +2,66 @@
 
 class Solver {
 
-  protected $M;
-  protected $T2;
-  protected $T3;
-  protected $T4;
-  protected $pizzas;
+  protected $data;
 
   public function __construct($data) {
-    $this->M  = $data['M'];
-    $this->T2 = $data['T2'];
-    $this->T3 = $data['T3'];
-    $this->T4 = $data['T4'];
-    $this->pizzas = $data['pizzas'];
+    $this->data  = $data;
   }
 
   public function solve() {
-    $deliveries = [];
-    $file_score = 0;
-    $deliveries_count = 0;
-    $available_teams_map = [
-      4 => $this->T4,
-      3 => $this->T3,
-      2 => $this->T2,
-    ];
-    $available_pizzas = $this->pizzas;
-    usort($available_pizzas, function ($a, $b) {
-      return $a['count'] < $b['count'];
+    $cars = $this->data['cars'];
+    $intersections = $this->data['intersections'];
+    $V = $this->data['V'];
+
+    usort($cars, function ($a, $b) {
+      return $a['time'] > $b['time'];
     });
 
-    // iterate for all team sizes starting from larger
-    for ($team_size = 4; $team_size >= 2; $team_size--) {
-      $available_teams = $available_teams_map[$team_size];
-      // 1. there should be more available pizzas than the team size (delivery count of pizzas)
-      // 2. also do not leave one pizza out, aka if available pizzas are 5, choose 2+3 instead of 4+1, as the one left will remain unused
-      // 3. the available teams for a specific team size should be > 0
-      while (count($available_pizzas) >= $team_size && count($available_pizzas) - $team_size <> 1 && $available_teams > 0) {
-        $available_teams--;
-        $delivery_pizzas = [];
-        $delivery_pizza_ids = [];
-        $delivery_ingredients = [];
-        for ($i = 0; $i < $team_size; $i++) {
-          $pizza = array_shift($available_pizzas);
-          $delivery_pizzas[] = $pizza;
-          $delivery_pizza_ids[] = $pizza['id'];
+    // found after euristics
+    // F:
+    $BEST_CARS_PERCENTAGE = 50;
+    $ALL_STREETS_WEIGHT = 20;
+    $BEST_STREETS_WEIGHT = 1;
+
+    $best_cars = array_slice($cars, 0, $V/$BEST_CARS_PERCENTAGE);
+    $best_streets = array_merge(...array_column($best_cars, 'streets'));
+    $best_streets_counts = array_count_values($best_streets);
+    $all_streets = array_merge(...array_column($cars, 'streets'));
+    $streets_counts = array_count_values($all_streets);
+
+    $plan = [];
+    $output = '';
+    foreach ($intersections as $key => $incoming_streets) {
+      foreach ($incoming_streets as $ind => $name) {
+        $weight = $streets_counts[$name] ?? 0;
+        if (!$weight) {
+          unset($incoming_streets[$ind]);
         }
-        $delivery_ingredients = array_unique(array_merge(...array_column($delivery_pizzas, 'ingredients')));
-        $delivery_score = pow(count($delivery_ingredients), 2);
-        $size = count($delivery_pizzas);
-        $deliveries[$deliveries_count] = ['id' => $deliveries_count, 'pizzas' => $delivery_pizza_ids, 'size' => $size, 'score' => $delivery_score];
-        $deliveries_count++;
+      }
+      if (count($incoming_streets)) {
+        usort($incoming_streets, function ($a, $b) use ($streets_counts, $best_streets_counts, $ALL_STREETS_WEIGHT, $BEST_STREETS_WEIGHT) {
+          $best_weight_a = $best_streets_counts[$a] ?? 0;
+          $weight_a = ceil($streets_counts[$a] / $ALL_STREETS_WEIGHT) + ceil($best_weight_a / $BEST_STREETS_WEIGHT);
+          $best_weight_b = $best_streets_counts[$b] ?? 0;
+          $weight_b = ceil($streets_counts[$b] / $ALL_STREETS_WEIGHT) + ceil($best_weight_b / $BEST_STREETS_WEIGHT);
+          return $weight_a < $weight_b;
+        });
+        $plan[$key] = [];
+        $output .= $key . PHP_EOL;
+        $output .= count($incoming_streets) . PHP_EOL;
+        foreach ($incoming_streets as $name) {
+          $best_weight = $best_streets_counts[$name] ?? 0;
+          $weight = ceil($streets_counts[$name] / $ALL_STREETS_WEIGHT) + ceil($best_weight / $BEST_STREETS_WEIGHT);
+          $weight = max(1, $weight);
+          // $weight = 1;
+          $output .= "$name $weight" . PHP_EOL;
+          $plan[$key][$name] = $weight;
+        }
       }
     }
+    $output = count($plan) . PHP_EOL . $output;
 
-    $output = "$deliveries_count\n";
-    foreach ($deliveries as $key => $delivery) {
-      $size = $delivery['size'];
-      $pizzas_arr = implode(' ', $delivery['pizzas']);
-      $output .= "$size $pizzas_arr\n";
-      $file_score += $delivery['score'];
-    }
-
-    return ['score' => $file_score, 'output' => $output];
-
+    return ['plan' =>$plan, 'output' => $output];
   }
+
 }
