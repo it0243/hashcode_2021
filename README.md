@@ -28,19 +28,19 @@ It could have been parameterized to cover all submissions and input files.
 ## Scores
 
 ### Current implementation
-A – An example:             1,001 points
-B – By the ocean:       4,566,362 points
-C – Checkmate:          1,298,544 points
-D – Daily commute:      1,435,972 points
-E – Etoile:               681,772 points
-F – Forever jammed:     1,397,066 points
-TOTAL:                  9,380,717 points
+* A – An example:             1,001 points
+* B – By the ocean:       4,566,362 points
+* C – Checkmate:          1,298,544 points
+* D – Daily commute:      1,435,972 points
+* E – Etoile:               681,772 points
+* F – Forever jammed:     1,397,066 points
+* TOTAL:                  9,380,717 points
 
 ### Best submissions
-A – An example:             2,002 points
-B – By the ocean:       4,566,537 points
-C – Checkmate:          1,298,723 points
-D – Daily commute:      1,588,095 points
-E – Etoile:               707,570 points
-F – Forever jammed:     1,397,066 points
-TOTAL:                  9,559,993 points
+* A – An example:             2,002 points
+* B – By the ocean:       4,566,537 points
+* C – Checkmate:          1,298,723 points
+* D – Daily commute:      1,588,095 points
+* E – Etoile:               707,570 points
+* F – Forever jammed:     1,397,066 points
+* TOTAL:                  9,559,993 points
