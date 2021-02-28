@@ -44,3 +44,9 @@ It could have been parameterized to cover all submissions and input files.
 * E – Etoile:               707,570 points
 * F – Forever jammed:     1,397,066 points
 * TOTAL:                  9,559,993 points
+
+## Execution instructions
+
+```
+php main.php
+```
